@@ -16,6 +16,7 @@ module LoadWrap
   @filters = []
   @loadwrap = proc { |filename| File.read(filename) }
 
+  # LoadWrap version number.
   VERSION = "0.0.1"
   
   class << self
@@ -42,7 +43,8 @@ module LoadWrap
     # installed at one time. Calling this method multiple times will
     # replace previously installed wrappers. Filters installed using
     # filter_code or filter_sexp will still be called when loadwrap
-    # hooks are installed.
+    # hooks are installed. The default loadwrap handler is simply
+    # calls File.read.
     #
     # === Example:
     #
@@ -53,8 +55,10 @@ module LoadWrap
       @loadwrap = block
     end
 
-    # Load, munge, and run a file.
-    def custom_load(filename)
+    # Load, munge, and run a file. Passes the file through the
+    # loadwrap handler and the contents through each of the installed
+    # filters (filter_code and filter_sexp).
+    def custom_load(filename) #:nodoc:
       code = @loadwrap.call(filename)
       code = @filters.inject(code) { |memo, filter| filter.call(memo) }
       eval code, TOPLEVEL_BINDING, current_file(filename)
@@ -133,7 +137,7 @@ module LoadWrap
     # to the filename. If the script is not found, it invokes the
     # original Kernel#require method (As
     # Kernel#loadwrap_original_require).
-    def custom_require(filename)
+    def custom_require(filename) #:nodoc:
       # p [:asked_for, filename]
       if path = search_path(filename)
         return false if feature_p(path, filename)

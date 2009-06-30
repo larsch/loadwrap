@@ -10,19 +10,27 @@ run by the Ruby interpreter.
 
 == FEATURES/PROBLEMS:
 
-* FIX (list of features or problems)
+* $LOADED_FEATURES and $" are updated prior to evaluating the
+  contents of a script. The MRI behaviour is to update it after the
+  script is evaluated.
 
 == SYNOPSIS:
+
+Intercepting loading of scripts from the file system using LoadWrap.loadwrap:
 
   require 'loadwrap'
   LoadWrap.loadwrap do |filename|
     File.read(filename)
   end
 
+Intercepting parsing of scripts using LoadWrap.filter_code:
+  
   require 'loadwrap'
   LoadWrap.filter_code do |code|
     code_munging_method(code)
   end
+
+Intercepting parsetrees using LoadWrap.filter_code (Requires ruby_parser and Ruby2Ruby gems):
 
   require 'sexpwrap'
   LoadWrap.filter_sexp do |code|

@@ -12,12 +12,12 @@ module LoadWrap
   #
   # === Example:
   #
-  #   require 'r2rwrap'
+  #   require 'sexpwrap'
   #   LoadWrapper.filter_sexp do |sexp|
   #     perform_sexp_munging(sexp)
   #   end
   def self.filter_sexp
-    LoadWrapper.filter_code do |code|
+    LoadWrap.filter_code do |code|
       Ruby2Ruby.new.process(yield(RubyParser.new.parse(code)))
     end
   end
