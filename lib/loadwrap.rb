@@ -91,7 +91,7 @@ module LoadWrap
       if Pathname.new(filename).absolute?
         filename
       else
-        if filename =~ /^\.\.\//
+        if filename =~ /^\.\.?\//
           filename
         else
           File.join('.', filename)
