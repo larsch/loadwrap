@@ -14,6 +14,7 @@ require 'pathname'
 
 module LoadWrap
   @filters = []
+  @loadwrap = proc { |filename| File.read(filename) }
 
   VERSION = "0.0.1"
   
@@ -34,9 +35,27 @@ module LoadWrap
       @filters.push(block)
     end
 
+    # Install a code loading block to be called whenever code is
+    # loaded via Kernel#require or Kernel#load. The block is passed
+    # the name of the file to be loaded and must evaluate to the Ruby
+    # source code to be evalutated. Only 1 of these blocks can be
+    # installed at one time. Calling this method multiple times will
+    # replace previously installed wrappers. Filters installed using
+    # filter_code or filter_sexp will still be called when loadwrap
+    # hooks are installed.
+    #
+    # === Example:
+    #
+    #   LoadWrap.loadwrap do |filename|
+    #     File.read(filename)
+    #   end
+    def loadwrap(&block)
+      @loadwrap = block
+    end
+
     # Load, munge, and run a file.
     def custom_load(filename)
-      code = File.read(filename)
+      code = @loadwrap.call(filename)
       code = @filters.inject(code) { |memo, filter| filter.call(memo) }
       eval code, TOPLEVEL_BINDING, current_file(filename)
     end
