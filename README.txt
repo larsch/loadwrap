@@ -15,6 +15,11 @@ run by the Ruby interpreter.
 == SYNOPSIS:
 
   require 'loadwrap'
+  LoadWrap.loadwrap do |filename|
+    File.read(filename)
+  end
+
+  require 'loadwrap'
   LoadWrap.filter_code do |code|
     code_munging_method(code)
   end
