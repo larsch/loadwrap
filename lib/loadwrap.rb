@@ -60,7 +60,9 @@ module LoadWrap
     # filters (filter_code and filter_sexp).
     def custom_load(filename) #:nodoc:
       code = @loadwrap.call(filename)
-      code = @filters.inject(code) { |memo, filter| filter.call(memo) }
+      code = @filters.inject(code) { |memo, filter|
+        filter.call(memo, filename)
+      }
       eval code, TOPLEVEL_BINDING, current_file(filename)
     end
 
