@@ -18,7 +18,7 @@ module LoadWrap
   #   end
   def self.filter_sexp
     LoadWrap.filter_code do |code, filename|
-      Ruby2Ruby.new.process(yield(RubyParser.new.parse(code, filename)))
+      Ruby2Ruby.new.process(yield(RubyParser.new.parse(code, filename), filename))
     end
   end
 end

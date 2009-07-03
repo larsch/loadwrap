@@ -18,19 +18,25 @@ module LoadWrap
 
   # LoadWrap version number.
   VERSION = "0.0.1"
+
+  class UnhandledPath < RuntimeError
+  end
   
   class << self
 
     # Install a code munging block to be called whenever code is
     # loaded via Kernel#require or Kernel#load. The block will be
-    # passed the contents of the script (Ruby source code). The result
+    # passed the contents of the script (Ruby source code) and
+    # optionally the filename of the script being loaded. The result
     # of the block (value) will be the actual script that is parsed
     # and run by Ruby.
     #
     # === Example:
     #
-    #   LoadWrap.filter_code do |code|
-    #     perform_code_munging(code)
+    #   LoadWrap.filter_code do |code, filename|
+    #     if filename =~ /somepattern/
+    #       perform_code_munging(code)
+    #     end
     #   end
     def filter_code(&block)
       @filters.push(block)
@@ -61,8 +67,14 @@ module LoadWrap
     def custom_load(filename) #:nodoc:
       code = @loadwrap.call(filename)
       code = @filters.inject(code) { |memo, filter|
-        filter.call(memo, filename)
+        raise UnhandledPath if memo.nil?
+        if filter.arity == 2
+          filter.call(memo, filename)
+        else
+          filter.call(memo)
+        end
       }
+      raise UnhandledPath if code.nil?
       eval code, TOPLEVEL_BINDING, current_file(filename)
     end
 
@@ -140,7 +152,6 @@ module LoadWrap
     # original Kernel#require method (As
     # Kernel#loadwrap_original_require).
     def custom_require(filename) #:nodoc:
-      # p [:asked_for, filename]
       if path = search_path(filename)
         return false if feature_p(path, filename)
         if filename =~ /\.rb$/
@@ -156,7 +167,12 @@ module LoadWrap
           return false if feature_p(path, rbfilename)
           # p [:insert, featurep_path(path, rbfilename)]
           $".push(featurep_path(path, rbfilename))
-          custom_load(path)
+          begin
+            custom_load(path)
+          rescue UnhandledPath
+            $".pop
+            loadwrap_original_require(filename)
+          end
         else
           loadwrap_original_require(filename)
         end
