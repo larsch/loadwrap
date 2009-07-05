@@ -64,7 +64,7 @@ module LoadWrap
     # Load, munge, and run a file. Passes the file through the
     # loadwrap handler and the contents through each of the installed
     # filters (filter_code and filter_sexp).
-    def custom_load(filename) #:nodoc:
+    def custom_load(filename, wrap = false) #:nodoc:
       code = @loadwrap.call(filename)
       code = @filters.inject(code) { |memo, filter|
         raise UnhandledPath if memo.nil?
@@ -75,7 +75,15 @@ module LoadWrap
         end
       }
       raise UnhandledPath if code.nil?
-      eval code, TOPLEVEL_BINDING, current_file(filename)
+
+      if wrap
+        global_clone = eval("self.clone", TOPLEVEL_BINDING)
+        global_binding = global_clone.instance_eval("binding")
+      else
+        global_binding = TOPLEVEL_BINDING
+      end
+      eval code, global_binding, current_file(filename)
+      return true
     end
 
     # Find a file in the Ruby search patch or relative to the current
@@ -189,8 +197,8 @@ module Kernel #:nodoc:
   end
 
   # Custom load method. This will is aliased to Kernel#load.
-  def loadwrap_custom_load(filename)
-    LoadWrap.custom_load(filename)
+  def loadwrap_custom_load(filename, wrap = false)
+    LoadWrap.custom_load(filename, wrap)
   end
 
   if respond_to?(:gem_original_require)
